@@ -51,7 +51,7 @@ def password():
     return render_template("admin/password.html")
 
 
-# 添加标签
+# 添加标签.
 @admin.route("/tag/add/", methods=["GET", "POST"])
 @admin_login_require
 def tag_add():
