@@ -1,7 +1,7 @@
 # coding:utf8
-from flask import Flask
-from flask import render_template
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
+import pymysql
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:131072@127.0.0.1:3306/movie"

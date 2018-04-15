@@ -2,13 +2,12 @@
 from datetime import datetime
 from app import db
 
-
 class User(db.Model):
     """
     Informations of users.
     """
     __tablename__ = "user"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # user number
     name = db.Column(db.String(100), unique=True)  # username
     password = db.Column(db.String(100))  # user's password
@@ -31,7 +30,7 @@ class Userlog(db.Model):
     Log when users sign in.
     """
     __tablename__ = "userlog"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # log number
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # corresponding user connected with the user table
     ip = db.Column(db.String(100))  # the corresponding users' IP address
@@ -46,7 +45,7 @@ class Tag(db.Model):
     Tag of the movies.
     """
     __tablename__ = "tag"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # tag number
     name = db.Column(db.String(100), unique=True)  # name of tag
     add_time = db.Column(db.DateTime, index=True, default=datetime.now)  # tag generation time
@@ -61,7 +60,7 @@ class Movie(db.Model):
     Definition of movie information.
     """
     __tablename__ = "movie"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # movie number
     title = db.Column(db.String(255), unique=True)  # title of the movie
     url = db.Column(db.String(255), unique=True)  # movie playback link
@@ -87,7 +86,7 @@ class Preview(db.Model):
     Movie preview.
     """
     __tablename__ = "preview"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # preview number
     title = db.Column(db.String(255), unique=True)  # title of the movie preview
     cover = db.Column(db.String(255), unique=True)  # cover of the movie preview
@@ -102,7 +101,7 @@ class Comment(db.Model):
     Movie comment.
     """
     __tablename__ = "comment"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # comment number
     content = db.Column(db.Text)  # content of the comment
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'))  # commented movie
@@ -118,7 +117,7 @@ class Collection(db.Model):
     Movie collection.
     """
     __tablename__ = "collection"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # collection number
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'))  # movie which is collected
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # user who collect this movie
@@ -133,7 +132,7 @@ class Authority(db.Model):
     The definition of authorities.
     """
     __tablename__ = "authority"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # authority number
     name = db.Column(db.String(100), unique=True)  # authority name
     url = db.Column(db.String(255), unique=True)  # the routing address corresponded to the authority
@@ -148,7 +147,7 @@ class Role(db.Model):
     The definition of roles.
     """
     __tablename__ = "role"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # role number
     name = db.Column(db.String(100), unique=True)  # role name
     authorities = db.Column(db.String(600))  # The authorities granted to the role
@@ -163,7 +162,7 @@ class Admin(db.Model):
     The definition of admins.
     """
     __tablename__ = "admin"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # admin number
     name = db.Column(db.String(100), unique=True)  # admin name
     password = db.Column(db.String(100))  # admin password
@@ -187,7 +186,7 @@ class Adminlog(db.Model):
     Log when administrators sign in.
     """
     __tablename__ = "adminlog"
-    __table_args__ = {'extend_existing': True}
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # log number
     admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'))  # corresponding user connected with the admin table
     ip = db.Column(db.String(100))  # the corresponding administrators' IP address
@@ -201,8 +200,8 @@ class Operationlog(db.Model):
     """
     Log when administrators sign in.
     """
-    __tablename__ = "adminlog"
-    __table_args__ = {'extend_existing': True}
+    __tablename__ = "operationlog"
+    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)  # log number
     admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'))  # corresponding user connected with the admin table
     ip = db.Column(db.String(100))  # the corresponding administrators' IP address
@@ -213,21 +212,24 @@ class Operationlog(db.Model):
         return "<Operationlog %r>" % self.id
 
 
-if __name__ == "__main__":
-    # db.create_all()
-    # role = Role(
-    #     name="SuperAdministrator",
-    #     authorities=""
-    # )
-    # db.session.add(role)
-    # db.session.commit()
-    from werkzeug.security import generate_password_hash
-
-    admin = Admin(
-        name="Peter",
-        password=generate_password_hash("131072"),
-        is_super=0,
-        role_id=1
-    )
-    db.session.add(admin)
-    db.session.commit()
+# if __name__ == "__main__":
+#     # 创建全部表，在创建数据库后仅能运行一次
+#     db.create_all()
+#     # 创建超级管理员角色，亦只能运行一次
+#     role = Role(
+#         name="超级管理员",
+#         authorities=""
+#     )
+#     db.session.add(role)
+#     db.session.commit()
+#     # 创建管理员账号，亦只能运行一次
+#     from werkzeug.security import generate_password_hash
+#
+#     admin = Admin(
+#         name="Peter",
+#         password=generate_password_hash("131072"),
+#         is_super=0,
+#         role_id=1
+#     )
+#     db.session.add(admin)
+#     db.session.commit()

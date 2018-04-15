@@ -1,10 +1,7 @@
 # coding:utf8
 from flask_wtf import FlaskForm
-from wtforms import StringField
-from wtforms import PasswordField
-from wtforms import SubmitField
-from wtforms.validators import DataRequired
-from wtforms.validators import ValidationError
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, ValidationError
 from app.models import Admin
 
 
@@ -46,3 +43,24 @@ class LoginForm(FlaskForm):
         _counter = Admin.query.filter_by(name=account).count()
         if _counter == 0:
             raise ValidationError("账号不存在，请输入正确的账号。")
+
+
+class TagForm(FlaskForm):
+    name = StringField(
+        label="名称",
+        validators=[
+            DataRequired("标签名称不能为空，请重新输入！")
+        ],
+        description="标签",
+        render_kw={
+            "class": "form-control",
+            "id": "input_name",
+            "placeholder": "请输入标签名称:"
+        }
+    )
+    submit = SubmitField(
+        '添加标签',
+        render_kw={
+            "class": "btn btn-primary"
+        }
+    )

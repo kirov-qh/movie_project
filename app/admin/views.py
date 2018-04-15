@@ -1,14 +1,10 @@
 # coding:utf8
 from . import admin
-from flask import render_template
-from flask import redirect
-from flask import url_for
-from flask import flash
-from flask import session
-from flask import request
-from app.admin.forms import LoginForm
-from app.models import Admin
+from flask import render_template, redirect, url_for, flash, session, request
+from app.admin.forms import LoginForm, TagForm
+from app.models import Admin, Tag
 from functools import wraps
+from app import db
 
 
 def admin_login_require(f):
@@ -55,16 +51,37 @@ def password():
     return render_template("admin/password.html")
 
 
-@admin.route("/tag/add/")
+# 添加标签
+@admin.route("/tag/add/", methods=["GET", "POST"])
 @admin_login_require
 def tag_add():
-    return render_template("admin/tag_add.html")
+    form = TagForm()
+    if form.validate_on_submit():
+        data = form.data
+        tag_counter = Tag.query.filter_by(name=data["name"]).count()
+        if tag_counter == 1:
+            flash("标签“%s”已经存在！" % (data["name"]), "errors")
+            return redirect(url_for('admin.tag_add'))
+        tag = Tag(
+            name=data["name"]
+        )
+        db.session.add(tag)
+        db.session.commit()
+        flash("添加标签“%s”成功！" % (data["name"]), "OK")
+        redirect(url_for('admin.tag_add'))
+    return render_template("admin/tag_add.html", form=form)
 
 
-@admin.route("/tag/list/")
+# 标签列表
+@admin.route("/tag/list/<int:current_page>", methods=["GET"])
 @admin_login_require
-def tag_list():
-    return render_template("admin/tag_list.html")
+def tag_list(current_page=None):
+    if current_page is None:
+        current_page = 1
+    page_data = Tag.query.order_by(
+        Tag.add_time.desc()
+    ).paginate(page=current_page, per_page=10)
+    return render_template("admin/tag_list.html", page_data=page_data)
 
 
 @admin.route("/movie/add/")
