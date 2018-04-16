@@ -51,7 +51,7 @@ def password():
     return render_template("admin/password.html")
 
 
-# 添加标签.
+# 标签添加
 @admin.route("/tag/add/", methods=["GET", "POST"])
 @admin_login_require
 def tag_add():
@@ -82,6 +82,38 @@ def tag_list(current_page=None):
         Tag.add_time.desc()
     ).paginate(page=current_page, per_page=10)
     return render_template("admin/tag_list.html", page_data=page_data)
+
+
+# 标签删除
+@admin.route("/tag/delete/<int:tag_id>", methods=["GET"])
+@admin_login_require
+def tag_delete(tag_id=None):
+    tag = Tag.query.filter_by(id=tag_id).first_or_404()
+    db.session.delete(tag)
+    db.session.commit()
+    flash("删除标签“%s”成功！" % (tag.name), "OK")
+    return redirect(url_for('admin.tag_list', current_page=1))
+
+
+# 标签编辑
+@admin.route("/tag/update/<int:tag_id>", methods=["GET", "POST"])
+@admin_login_require
+def tag_update(tag_id=None):
+    form = TagForm()
+    tag_old = Tag.query.get_or_404(tag_id)
+    if form.validate_on_submit():
+        data = form.data
+        tag_counter = Tag.query.filter_by(name=data["name"]).count()
+        if tag_old.name != data["name"] and tag_counter == 1:
+            # 旧标签的名字和新标签的名字不同且新标签的名字已经存在
+            flash("标签“%s”已经存在！" % (data["name"]), "errors")
+            return redirect(url_for('admin.tag_update', tag_id=tag_id))
+        old_tag_name =tag_old.name
+        tag_old.name = data["name"]
+        db.session.commit()
+        flash("修改标签“%s”为“%s”成功！" % (old_tag_name, data["name"]), "OK")
+        redirect(url_for('admin.tag_update', tag_id=tag_id))
+    return render_template("admin/tag_update.html", form=form, tag_old=tag_old)
 
 
 @admin.route("/movie/add/")
