@@ -1,13 +1,25 @@
 # coding:utf8
 from . import admin
 from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm
-from app.models import Admin, Tag
+from app.admin.forms import LoginForm, TagForm, MovieForm
+from app.models import Admin, Tag, Movie
 from functools import wraps
-from app import db
+from app import db, app
+from werkzeug.utils import secure_filename
+import os
+import uuid
+import datetime
 
 
+# 登录装饰器
 def admin_login_require(f):
+    """
+    确保所有页面都在登录后才有访问权限。
+    :param f: 对应页面的函数。
+    :return: 返回一个检查是否登录的函数。登录时直接转到目标页面；
+             未登录时跳转到登录页。
+    """
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "current_client" not in session:
@@ -15,6 +27,13 @@ def admin_login_require(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+# 修改文件名称
+def change_filename(filename):
+    file_info = os.path.splitext(filename)
+    filename = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "_" + str(uuid.uuid4().hex) + file_info[-1]
+    return filename
 
 
 @admin.route("/")
@@ -108,7 +127,7 @@ def tag_update(tag_id=None):
             # 旧标签的名字和新标签的名字不同且新标签的名字已经存在
             flash("标签“%s”已经存在！" % (data["name"]), "errors")
             return redirect(url_for('admin.tag_update', tag_id=tag_id))
-        old_tag_name =tag_old.name
+        old_tag_name = tag_old.name
         tag_old.name = data["name"]
         db.session.commit()
         flash("修改标签“%s”为“%s”成功！" % (old_tag_name, data["name"]), "OK")
@@ -116,10 +135,40 @@ def tag_update(tag_id=None):
     return render_template("admin/tag_update.html", form=form, tag_old=tag_old)
 
 
-@admin.route("/movie/add/")
+# 添加电影
+@admin.route("/movie/add/", methods=["GET", "POST"])
 @admin_login_require
 def movie_add():
-    return render_template("admin/movie_add.html")
+    form = MovieForm()
+    if form.validate_on_submit():
+        data = form.data
+        movie_file_url = secure_filename(form.movie_url.data.filename)
+        cover_file_url = secure_filename(form.cover_url.data.filename)
+        if not os.path.exists(app.config["UP_DIR"]):
+            os.makedirs(app.config["UP_DIR"])
+            os.chmod(app.config["UP_DIR"], 6)  # read and write
+        movie_file_url = change_filename(movie_file_url)
+        cover_file_url = change_filename(cover_file_url)
+        form.movie_url.data.save(app.config["UP_DIR"] + movie_file_url)
+        form.cover_url.data.save(app.config["UP_DIR"] + cover_file_url)
+        movie = Movie(
+            title=data["movie_title"],
+            url=movie_file_url,
+            info=data["movie_info"],
+            cover=cover_file_url,
+            rating=int(data["movie_rating"]),
+            views=0,
+            review_num=0,
+            tag_id=int(data["movie_tag"]),
+            area=data["movie_area"],
+            release_time=data["movie_release_time"],
+            length=data["movie_length"]
+        )
+        db.session.add(movie)
+        db.session.commit()
+        flash("电影%s添加成功！" % data["movie_title"], "OK")
+        return redirect(url_for('admin.movie_add'))
+    return render_template("admin/movie_add.html", form=form)
 
 
 @admin.route("/movie/list/")

@@ -66,13 +66,13 @@ class Movie(db.Model):
     url = db.Column(db.String(255), unique=True)  # movie playback link
     info = db.Column(db.Text)  # introduction of the movie
     cover = db.Column(db.String(255), unique=True)  # cover of the movie
-    star = db.Column(db.SmallInteger)  # rating of the movie
+    rating = db.Column(db.SmallInteger)  # rating of the movie
     views = db.Column(db.BigInteger)  # number of times played
     review_num = db.Column(db.BigInteger)  # number of reviews
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'))  # corresponding tag connected with the tag table
     area = db.Column(db.String(255))  # movie release area
     release_time = db.Column(db.Date)  # movie release time
-    lenth = db.Column(db.String(100))  # the length of the movie
+    length = db.Column(db.String(100))  # the length of the movie
     add_time = db.Column(db.DateTime, index=True, default=datetime.now)  # time when the movie added to the website
     comments = db.relationship('Comment', backref='movie')  # key used to associate with comment table
     collections = db.relationship('Collection', backref='movie')  # key used to associate with collection table

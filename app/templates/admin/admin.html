@@ -15,7 +15,7 @@
           href="{{ url_for('static', filename='admin/plugins/datepicker/datepicker3.css') }}">
     <style>
         * {
-            font-family: "思源黑体";
+            font-family: "'Source Han Sans', sans-serif";
         }
 
         .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
@@ -96,7 +96,13 @@
             {% include "admin/grid.html" %}
         </section>
     </aside>
-    <div class="content-wrapper"></div>
+    <div class="content-wrapper">
+        <!--内容-->
+        {% block content %}
+
+        {% endblock %}
+        <!--内容-->
+    </div>
     <footer class="main-footer">
         <div class="pull-right hidden-xs">
             <b>版本</b> 1.0
