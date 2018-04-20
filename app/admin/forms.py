@@ -4,13 +4,11 @@ from wtforms import StringField, PasswordField, SubmitField, FileField, TextArea
 from wtforms.validators import DataRequired, ValidationError
 from app.models import Admin, Tag
 
-movie_tag_list = Tag.query.all()
-
 
 class LoginForm(FlaskForm):
     """管理员登录表单。"""
     account = StringField(
-        label="username",  # 此处不能写成：label="username"，否则会报错。
+        label="username",
         validators=[
             DataRequired("请输入帐号！")
         ],
@@ -130,7 +128,6 @@ class MovieForm(FlaskForm):
             DataRequired("请选择电影对应的标签！")
         ],
         coerce=int,
-        choices=[(v.id, v.name) for v in movie_tag_list],
         description="电影标签",
         render_kw={
             "class": "form-control"

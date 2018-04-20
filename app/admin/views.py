@@ -140,6 +140,7 @@ def tag_update(tag_id=None):
 @admin_login_require
 def movie_add():
     form = MovieForm()
+    form.movie_tag.choices = [(v.id, v.name) for v in Tag.query.all()]
     if form.validate_on_submit():
         data = form.data
         movie_file_url = secure_filename(form.movie_url.data.filename)
