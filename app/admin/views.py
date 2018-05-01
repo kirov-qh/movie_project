@@ -1,8 +1,8 @@
 # coding:utf8
 from . import admin
 from flask import render_template, redirect, url_for, flash, session, request
-from app.admin.forms import LoginForm, TagForm, MovieForm
-from app.models import Admin, Tag, Movie
+from app.admin.forms import LoginForm, TagForm, MovieForm, PreviewForm
+from app.models import Admin, Tag, Movie, Preview
 from functools import wraps
 from app import db, app
 from werkzeug.utils import secure_filename
@@ -92,7 +92,7 @@ def tag_add():
 
 
 # 标签列表
-@admin.route("/tag/list/<int:current_page>", methods=["GET"])
+@admin.route("/tag/list/<int:current_page>/", methods=["GET"])
 @admin_login_require
 def tag_list(current_page=None):
     if current_page is None:
@@ -104,7 +104,7 @@ def tag_list(current_page=None):
 
 
 # 标签删除
-@admin.route("/tag/delete/<int:tag_id>", methods=["GET"])
+@admin.route("/tag/delete/<int:tag_id>/", methods=["GET"])
 @admin_login_require
 def tag_delete(tag_id=None):
     tag = Tag.query.filter_by(id=tag_id).first_or_404()
@@ -115,7 +115,7 @@ def tag_delete(tag_id=None):
 
 
 # 标签编辑
-@admin.route("/tag/update/<int:tag_id>", methods=["GET", "POST"])
+@admin.route("/tag/update/<int:tag_id>/", methods=["GET", "POST"])
 @admin_login_require
 def tag_update(tag_id=None):
     form = TagForm()
@@ -135,7 +135,7 @@ def tag_update(tag_id=None):
     return render_template("admin/tag_update.html", form=form, tag_old=tag_old)
 
 
-# 添加电影
+# 电影添加
 @admin.route("/movie/add/", methods=["GET", "POST"])
 @admin_login_require
 def movie_add():
@@ -147,7 +147,7 @@ def movie_add():
         cover_file_url = secure_filename(form.cover_url.data.filename)
         if not os.path.exists(app.config["UP_DIR"]):
             os.makedirs(app.config["UP_DIR"])
-            os.chmod(app.config["UP_DIR"], 6)  # read and write
+            os.chmod(app.config["UP_DIR"], 0o776)  # 776前面需加“0o”以十进制表示，否则默认以八进制表示
         movie_file_url = change_filename(movie_file_url)
         cover_file_url = change_filename(cover_file_url)
         form.movie_url.data.save(app.config["UP_DIR"] + movie_file_url)
@@ -167,21 +167,87 @@ def movie_add():
         )
         db.session.add(movie)
         db.session.commit()
-        flash("电影%s添加成功！" % data["movie_title"], "OK")
+        flash("电影“%s”添加成功！" % data["movie_title"], "OK")
         return redirect(url_for('admin.movie_add'))
     return render_template("admin/movie_add.html", form=form)
 
 
-@admin.route("/movie/list/")
+# 电影列表
+@admin.route("/movie/list/<int:current_page>/", methods=["GET"])
 @admin_login_require
-def movie_list():
-    return render_template("admin/movie_list.html")
+def movie_list(current_page=None):
+    if current_page is None:
+        current_page = 1
+    page_data = Movie.query.join(Tag).filter(
+        Tag.id == Movie.tag_id
+    ).order_by(
+        Movie.add_time.desc()
+    ).paginate(page=current_page, per_page=10)
+    return render_template("admin/movie_list.html", page_data=page_data)
 
 
-@admin.route("/preview/add/")
+# 电影删除
+@admin.route("/movie/delete/<int:movie_id>/", methods=["GET"])
+@admin_login_require
+def movie_delete(movie_id=None):
+    movie = Movie.query.get_or_404(int(movie_id))
+    db.session.delete(movie)
+    db.session.commit()
+    # 删除电影文件和封面文件
+    flash("电影“%s”删除成功！" % movie.title, "OK")
+    return redirect(url_for('admin.movie_list', current_page=1))
+
+
+# 电影修改
+@admin.route("/movie/update/<int:movie_id>/", methods=["GET", "POST"])
+@admin_login_require
+def movie_update(movie_id=None):
+    form = MovieForm()
+    movie = Movie.query.get_or_404(int(movie_id))
+    if request.method == "GET":
+        form.movie_info.data = movie.info
+        form.movie_tag.data = movie.tag_id
+        form.movie_rating.data = movie.rating
+    if form.validate_on_submit():
+        data = form.data
+        movie_count = Movie.query.filter_by(title=data["movie_title"]).count()
+        if movie_count == 1 and movie.title != data["movie_title"]:
+            flash("电影“%s”已经存在，修改失败！" % data["movie_title"], "errors")
+            return redirect(url_for('admin.movie_update', movie_id=movie_id))
+        if not os.path.exists(app.config["UP_DIR"]):
+            os.makedirs(app.config["UP_DIR"])
+            os.chmod(app.config["UP_DIR"], 0o776)  # 776前面需加“0o”以十进制表示，否则默认以八进制表示
+        if form.movie_url.data.filename != "":
+            """更改电影视频文件名"""
+            movie_file_url = secure_filename(form.movie_url.data.filename)
+            movie.url = change_filename(movie_file_url)
+            form.movie_url.data.save(app.config["UP_DIR"] + movie.url)
+        if form.cover_url.data.filename != "":
+            """更改电影封面文件名"""
+            cover_file_url = secure_filename(form.cover_url.data.filename)
+            movie.cover = change_filename(cover_file_url)
+            form.cover_url.data.save(app.config["UP_DIR"] + movie.cover)
+        movie.rating = data["movie_rating"]
+        movie.tag_id = data["movie_tag"]
+        movie.info = data["movie_info"]
+        movie.title = data["movie_title"]
+        movie.area = data["movie_area"]
+        movie.length = data["movie_length"]
+        movie.release_time = data["movie_release_time"]
+        db.session.commit()
+        flash("电影“%s”修改成功！" % data["movie_title"], "OK")
+        return redirect(url_for('admin.movie_update', movie_id=movie_id))
+    return render_template("admin/movie_update.html", form=form, movie=movie)
+
+
+@admin.route("/preview/add/", methods=["GET", "POST"])
 @admin_login_require
 def preview_add():
-    return render_template("admin/preview_add.html")
+    form = PreviewForm()
+    if form.validate_on_submit():
+        data = form.data
+
+    return render_template("admin/preview_add.html", form=form)
 
 
 @admin.route("/preview/list/")

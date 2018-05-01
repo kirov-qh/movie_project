@@ -128,6 +128,7 @@ class MovieForm(FlaskForm):
             DataRequired("请选择电影对应的标签！")
         ],
         coerce=int,
+        choices=[(v.id, v.name) for v in Tag.query.all()],
         description="电影标签",
         render_kw={
             "class": "form-control"
@@ -166,6 +167,40 @@ class MovieForm(FlaskForm):
             "placeholder": "请输入电影上映时间:",
             "id": "input_release_time"
         }
+    )
+    submit = SubmitField(
+        '添加',
+        render_kw={
+            "class": "btn btn-primary"
+        }
+    )
+    update_submit = SubmitField(
+        '编辑',
+        render_kw={
+            "class": "btn btn-primary"
+        }
+    )
+
+
+class PreviewForm(FlaskForm):
+    preview_title = StringField(
+        label="预告标题",
+        validators=[
+            DataRequired("预告标题不能为空，请重新输入！")
+        ],
+        description="预告标题",
+        render_kw={
+            "class": "form-control",
+            "id": "input_name",
+            "placeholder": "请输入预告标题:"
+        }
+    )
+    cover_url = FileField(
+        label="预告封面",
+        validators=[
+            DataRequired("请上传预告封面！")
+        ],
+        description="预告封面"
     )
     submit = SubmitField(
         '添加',
